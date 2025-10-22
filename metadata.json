@@ -1,0 +1,5 @@
+{
+  "name": "Animask",
+  "description": "An application that uses AI to replace heads in photos with cartoon animal heads to protect user privacy, designed with Apple's minimalist aesthetic.",
+  "requestFramePermissions": []
+}
