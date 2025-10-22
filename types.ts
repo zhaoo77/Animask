@@ -27,16 +27,17 @@ export interface LanguageContent {
       title: string;
     }
   };
-  footer: {
-    text: string;
-  };
+  // FIX: Add apiKeyModal to LanguageContent interface
   apiKeyModal: {
     title: string;
     label: string;
     placeholder: string;
+    info: string;
     save: string;
     clear: string;
-    info: string;
+  };
+  footer: {
+    text: string;
   };
 }
 

@@ -4,11 +4,8 @@ import { TEXTS } from './constants';
 import { processImageWithAnimalHeads } from './services/geminiService';
 import Header from './components/Header';
 import Footer from './components/Footer';
-import ApiKeyModal from './components/ApiKeyModal';
 import { UploadIcon, DownloadIcon } from './components/icons';
 import ShineLoading from './components/ShineLoading';
-
-const API_KEY_STORAGE_KEY = 'gemini-api-key';
 
 const fileToDataUrl = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -37,8 +34,6 @@ export default function App() {
     const [error, setError] = useState<string | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [history, setHistory] = useState<HistoryItem[]>([]);
-    const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
-    const [apiKey, setApiKey] = useState<string>('');
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -47,14 +42,7 @@ export default function App() {
     const [showRightFade, setShowRightFade] = useState(false);
 
     const text = TEXTS[language];
-    const isApiKeySet = !!apiKey || !!process.env.API_KEY;
-
-    useEffect(() => {
-        const storedKey = localStorage.getItem(API_KEY_STORAGE_KEY);
-        if (storedKey) {
-            setApiKey(storedKey);
-        }
-    }, []);
+    const isApiKeySet = !!process.env.API_KEY;
 
     const updateScrollFades = useCallback(() => {
         const el = scrollContainerRef.current;
@@ -78,17 +66,6 @@ export default function App() {
         }
     }, [processedImages, updateScrollFades]);
 
-
-    const handleSaveApiKey = (key: string) => {
-        setApiKey(key);
-        localStorage.setItem(API_KEY_STORAGE_KEY, key);
-    };
-    
-    const handleClearApiKey = () => {
-        setApiKey('');
-        localStorage.removeItem(API_KEY_STORAGE_KEY);
-    };
-
     const handleReset = useCallback(() => {
         if (originalImage && processedImages.length > 0 && originalMimeType) {
             const newHistoryItem: HistoryItem = {
@@ -111,9 +88,10 @@ export default function App() {
     }, [originalImage, processedImages, originalMimeType]);
     
     const handleSubmit = useCallback(async (file: File) => {
-        const effectiveApiKey = apiKey || process.env.API_KEY;
-        if (!effectiveApiKey) {
-            setIsApiKeyModalOpen(true);
+        if (!isApiKeySet) {
+            // This should ideally not be reachable if the UI is disabled
+            setError(text.editor.initial.noApiKey);
+            setAppState('error');
             return;
         }
 
@@ -132,7 +110,7 @@ export default function App() {
             setOriginalImage(dataUrl);
             setOriginalMimeType(file.type);
 
-            const resultDataUrl = await processImageWithAnimalHeads(dataUrl, file.type, effectiveApiKey);
+            const resultDataUrl = await processImageWithAnimalHeads(dataUrl, file.type);
             
             setProcessedImages([resultDataUrl]);
             setAppState('result');
@@ -141,17 +119,16 @@ export default function App() {
             setError(err instanceof Error ? err.message : 'An unknown error occurred.');
             setAppState('error');
         }
-    }, [handleReset, apiKey]);
+    }, [handleReset, isApiKeySet, text]);
 
     const handleRetry = useCallback(async () => {
-        const effectiveApiKey = apiKey || process.env.API_KEY;
-        if (!originalImage || !originalMimeType || isRetrying || !effectiveApiKey) return;
+        if (!originalImage || !originalMimeType || isRetrying || !isApiKeySet) return;
 
         setIsRetrying(true);
         setError(null);
         
         try {
-            const resultDataUrl = await processImageWithAnimalHeads(originalImage, originalMimeType, effectiveApiKey);
+            const resultDataUrl = await processImageWithAnimalHeads(originalImage, originalMimeType);
             setProcessedImages(prev => [...prev, resultDataUrl]);
         } catch (err) {
             console.error(err);
@@ -160,7 +137,7 @@ export default function App() {
         } finally {
             setIsRetrying(false);
         }
-    }, [originalImage, originalMimeType, isRetrying, apiKey]);
+    }, [originalImage, originalMimeType, isRetrying, isApiKeySet]);
 
     const loadFromHistory = useCallback((item: HistoryItem, index: number) => {
         handleReset();
@@ -301,7 +278,7 @@ export default function App() {
                         </div>
 
                         <div className="mt-12 flex justify-center items-center flex-wrap gap-4">
-                            <button onClick={handleRetry} disabled={isRetrying} className="px-6 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 font-semibold rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <button onClick={handleRetry} disabled={isRetrying || !isApiKeySet} className="px-6 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 font-semibold rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
                                 {text.editor.result.retry}
                             </button>
                             <button onClick={handleReset} disabled={isRetrying} className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-semibold rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
@@ -381,16 +358,7 @@ export default function App() {
             <Header 
                 language={language} 
                 toggleLanguage={toggleLanguage} 
-                text={text.header} 
-                onSettingsClick={() => setIsApiKeyModalOpen(true)}
-            />
-            <ApiKeyModal
-                isOpen={isApiKeyModalOpen}
-                onClose={() => setIsApiKeyModalOpen(false)}
-                onSave={handleSaveApiKey}
-                onClear={handleClearApiKey}
-                currentKey={apiKey}
-                text={text.apiKeyModal}
+                text={text.header}
             />
             <main className="flex-grow flex flex-col items-center justify-center px-4 pt-20 pb-10">
                  <AnimatedSection className="w-full flex items-center justify-center flex-grow">

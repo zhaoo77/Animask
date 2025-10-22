@@ -10,7 +10,7 @@ export const TEXTS: Record<Language, LanguageContent> = {
         title: "上传或粘贴您的图片",
         prompt: "点击选择文件",
         paste: "或直接粘贴图片 (Cmd+V)",
-        noApiKey: "请先设置您的 API 密钥"
+        noApiKey: "应用未配置 API 密钥，请联系管理员。"
       },
       loading: "AI 正在处理中，请稍候...",
       result: {
@@ -23,24 +23,25 @@ export const TEXTS: Record<Language, LanguageContent> = {
       },
       error: {
         title: "发生错误",
-        message: "图片处理失败，请检查您的API密钥或稍后重试。",
+        message: "图片处理失败，请稍后重试。",
         retry: "重试"
       },
       history: {
         title: "最近生成"
       }
     },
-    footer: {
-      text: "由 Gemini Nano Banana 驱动"
-    },
+    // FIX: Add apiKeyModal content for Chinese
     apiKeyModal: {
       title: "设置 API 密钥",
       label: "您的 Gemini API 密钥",
-      placeholder: "在此处粘贴您的密钥",
+      placeholder: "在此输入您的 API 密钥",
+      info: "您的 API 密钥将存储在您的本地浏览器中，绝不会发送到我们的服务器。",
       save: "保存密钥",
-      clear: "清除密钥",
-      info: "您的密钥将安全地存储在浏览器本地，不会被分享。"
-    }
+      clear: "清除密钥"
+    },
+    footer: {
+      text: "由 Gemini Nano Banana 驱动"
+    },
   },
   en: {
     header: {
@@ -51,7 +52,7 @@ export const TEXTS: Record<Language, LanguageContent> = {
         title: "Upload or Paste Your Image",
         prompt: "Click to select a file",
         paste: "or paste an image (Cmd+V)",
-        noApiKey: "Please set your API Key first"
+        noApiKey: "Application is not configured with an API Key. Please contact the administrator."
       },
       loading: "AI is processing, please wait...",
       result: {
@@ -64,23 +65,24 @@ export const TEXTS: Record<Language, LanguageContent> = {
       },
       error: {
         title: "An Error Occurred",
-        message: "Failed to process the image. Please check your API key or try again later.",
+        message: "Failed to process the image. Please try again later.",
         retry: "Retry"
       },
       history: {
         title: "Recent Generations"
       }
     },
+    // FIX: Add apiKeyModal content for English
+    apiKeyModal: {
+      title: "Set API Key",
+      label: "Your Gemini API Key",
+      placeholder: "Enter your API key here",
+      info: "Your API key is stored locally in your browser and never sent to our servers.",
+      save: "Save Key",
+      clear: "Clear Key"
+    },
     footer: {
       text: "Powered by Gemini Nano Banana"
     },
-    apiKeyModal: {
-        title: "Set API Key",
-        label: "Your Gemini API Key",
-        placeholder: "Paste your key here",
-        save: "Save Key",
-        clear: "Clear Key",
-        info: "Your key will be stored securely in your browser's local storage and will not be shared."
-    }
   }
 };
