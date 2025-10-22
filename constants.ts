@@ -10,7 +10,7 @@ export const TEXTS: Record<Language, LanguageContent> = {
         title: "上传或粘贴您的图片",
         prompt: "点击选择文件",
         paste: "或直接粘贴图片 (Cmd+V)",
-        noApiKey: "应用未配置 API 密钥，请联系管理员。"
+        noApiKey: "请在设置中配置您的 API 密钥"
       },
       loading: "AI 正在处理中，请稍候...",
       result: {
@@ -30,7 +30,6 @@ export const TEXTS: Record<Language, LanguageContent> = {
         title: "最近生成"
       }
     },
-    // FIX: Add apiKeyModal content for Chinese
     apiKeyModal: {
       title: "设置 API 密钥",
       label: "您的 Gemini API 密钥",
@@ -52,7 +51,7 @@ export const TEXTS: Record<Language, LanguageContent> = {
         title: "Upload or Paste Your Image",
         prompt: "Click to select a file",
         paste: "or paste an image (Cmd+V)",
-        noApiKey: "Application is not configured with an API Key. Please contact the administrator."
+        noApiKey: "Please configure your API key in the settings"
       },
       loading: "AI is processing, please wait...",
       result: {
@@ -72,7 +71,6 @@ export const TEXTS: Record<Language, LanguageContent> = {
         title: "Recent Generations"
       }
     },
-    // FIX: Add apiKeyModal content for English
     apiKeyModal: {
       title: "Set API Key",
       label: "Your Gemini API Key",

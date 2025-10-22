@@ -1,11 +1,11 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 
-export async function processImageWithAnimalHeads(base64Image: string, mimeType: string): Promise<string> {
-  if (!process.env.API_KEY) {
-    console.error("Gemini API key is not configured in environment variables.");
-    throw new Error("Application is not configured correctly. API key is missing.");
+export async function processImageWithAnimalHeads(base64Image: string, mimeType: string, apiKey: string): Promise<string> {
+  if (!apiKey) {
+    console.error("Gemini API key is not provided.");
+    throw new Error("API Key is not set. Please set it in the application settings.");
   }
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey });
   
   // Gemini API expects base64 data without the data URL prefix
   const pureBase64 = base64Image.split(',')[1];
@@ -49,7 +49,7 @@ export async function processImageWithAnimalHeads(base64Image: string, mimeType:
   } catch (error) {
     console.error("Gemini API call failed:", error);
     if (error instanceof Error && error.message.includes('API key not valid')) {
-        throw new Error("The configured API Key is not valid. Please verify it in your deployment environment.");
+        throw new Error("The provided API Key is not valid. Please verify it in the settings.");
     }
     throw new Error("Failed to process the image with the AI model. Please try again later.");
   }

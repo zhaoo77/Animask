@@ -4,6 +4,7 @@ import { TEXTS } from './constants';
 import { processImageWithAnimalHeads } from './services/geminiService';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import ApiKeyModal from './components/ApiKeyModal';
 import { UploadIcon, DownloadIcon } from './components/icons';
 import ShineLoading from './components/ShineLoading';
 
@@ -34,6 +35,8 @@ export default function App() {
     const [error, setError] = useState<string | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [history, setHistory] = useState<HistoryItem[]>([]);
+    const [apiKey, setApiKey] = useState('');
+    const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -42,7 +45,24 @@ export default function App() {
     const [showRightFade, setShowRightFade] = useState(false);
 
     const text = TEXTS[language];
-    const isApiKeySet = !!process.env.API_KEY;
+    const isApiKeySet = !!apiKey;
+
+    useEffect(() => {
+        const storedKey = localStorage.getItem('gemini-api-key');
+        if (storedKey) {
+            setApiKey(storedKey);
+        }
+    }, []);
+
+    const handleSaveApiKey = (key: string) => {
+        setApiKey(key);
+        localStorage.setItem('gemini-api-key', key);
+    };
+
+    const handleClearApiKey = () => {
+        setApiKey('');
+        localStorage.removeItem('gemini-api-key');
+    };
 
     const updateScrollFades = useCallback(() => {
         const el = scrollContainerRef.current;
@@ -89,9 +109,8 @@ export default function App() {
     
     const handleSubmit = useCallback(async (file: File) => {
         if (!isApiKeySet) {
-            // This should ideally not be reachable if the UI is disabled
-            setError(text.editor.initial.noApiKey);
-            setAppState('error');
+            setError("Please set your API key in the settings.");
+            setIsApiKeyModalOpen(true);
             return;
         }
 
@@ -110,7 +129,7 @@ export default function App() {
             setOriginalImage(dataUrl);
             setOriginalMimeType(file.type);
 
-            const resultDataUrl = await processImageWithAnimalHeads(dataUrl, file.type);
+            const resultDataUrl = await processImageWithAnimalHeads(dataUrl, file.type, apiKey);
             
             setProcessedImages([resultDataUrl]);
             setAppState('result');
@@ -119,7 +138,7 @@ export default function App() {
             setError(err instanceof Error ? err.message : 'An unknown error occurred.');
             setAppState('error');
         }
-    }, [handleReset, isApiKeySet, text]);
+    }, [handleReset, isApiKeySet, apiKey]);
 
     const handleRetry = useCallback(async () => {
         if (!originalImage || !originalMimeType || isRetrying || !isApiKeySet) return;
@@ -128,7 +147,7 @@ export default function App() {
         setError(null);
         
         try {
-            const resultDataUrl = await processImageWithAnimalHeads(originalImage, originalMimeType);
+            const resultDataUrl = await processImageWithAnimalHeads(originalImage, originalMimeType, apiKey);
             setProcessedImages(prev => [...prev, resultDataUrl]);
         } catch (err) {
             console.error(err);
@@ -137,7 +156,7 @@ export default function App() {
         } finally {
             setIsRetrying(false);
         }
-    }, [originalImage, originalMimeType, isRetrying, isApiKeySet]);
+    }, [originalImage, originalMimeType, isRetrying, isApiKeySet, apiKey]);
 
     const loadFromHistory = useCallback((item: HistoryItem, index: number) => {
         handleReset();
@@ -299,6 +318,7 @@ export default function App() {
                 );
             case 'initial':
             default:
+                const noApiKeyMessage = language === 'zh' ? '请在设置中配置您的 API 密钥' : 'Please configure your API key in the settings';
                 return (
                     <div
                         className={`relative w-full max-w-xl p-8 border-2 border-dashed rounded-2xl transition-colors ${isApiKeySet ? (isDragging ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500') : 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800/50'}`}
@@ -325,7 +345,7 @@ export default function App() {
                                     <p className="text-xs text-gray-400 dark:text-gray-500">{text.editor.initial.paste}</p>
                                 </>
                             ) : (
-                                 <p className="mt-2 text-sm text-red-500 dark:text-red-400 font-semibold">{text.editor.initial.noApiKey}</p>
+                                 <p className="mt-2 text-sm text-red-500 dark:text-red-400 font-semibold">{noApiKeyMessage}</p>
                             )}
                         </div>
                     </div>
@@ -358,6 +378,7 @@ export default function App() {
             <Header 
                 language={language} 
                 toggleLanguage={toggleLanguage} 
+                onSettingsClick={() => setIsApiKeyModalOpen(true)}
                 text={text.header}
             />
             <main className="flex-grow flex flex-col items-center justify-center px-4 pt-20 pb-10">
@@ -368,6 +389,14 @@ export default function App() {
                 {appState !== 'loading' && renderHistory()}
             </main>
             <Footer text={text.footer}/>
+            <ApiKeyModal
+                isOpen={isApiKeyModalOpen}
+                onClose={() => setIsApiKeyModalOpen(false)}
+                onSave={handleSaveApiKey}
+                onClear={handleClearApiKey}
+                currentKey={apiKey}
+                text={text.apiKeyModal}
+            />
         </div>
     );
 }
