@@ -135,7 +135,8 @@ export default function App() {
             setAppState('result');
         } catch (err) {
             console.error(err);
-            setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+            const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+            setError(errorMessage);
             setAppState('error');
         }
     }, [handleReset, isApiKeySet, apiKey]);
@@ -151,8 +152,11 @@ export default function App() {
             setProcessedImages(prev => [...prev, resultDataUrl]);
         } catch (err) {
             console.error(err);
-            setError(err instanceof Error ? err.message : 'An unknown error occurred.');
-            setAppState('error');
+            const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+            setError(errorMessage);
+            // We keep the app state on 'result' but show an error message briefly
+            // Or we could switch to a full error state. Let's show a toast/alert later.
+            // For now, let's just log it and maybe show a small indicator.
         } finally {
             setIsRetrying(false);
         }
@@ -308,9 +312,9 @@ export default function App() {
                 );
             case 'error':
                  return (
-                    <div className="text-center">
+                    <div className="text-center max-w-2xl">
                         <h3 className="text-2xl font-semibold text-red-600 dark:text-red-400">{text.editor.error.title}</h3>
-                        <p className="mt-2 text-gray-600 dark:text-gray-300">{error || text.editor.error.message}</p>
+                        <p className="mt-4 text-gray-600 dark:text-gray-300 bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">{error || text.editor.error.message}</p>
                         <button onClick={handleReset} className="mt-6 px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-semibold rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300">
                             {text.editor.error.retry}
                         </button>

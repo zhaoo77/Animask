@@ -5,6 +5,9 @@ export async function processImageWithAnimalHeads(base64Image: string, mimeType:
     console.error("Gemini API key is not provided.");
     throw new Error("API Key is not set. Please set it in the application settings.");
   }
+  
+  // It's a common mistake to create the GoogleGenAI instance with the wrong variable.
+  // We will create it with the provided apiKey parameter.
   const ai = new GoogleGenAI({ apiKey });
   
   // Gemini API expects base64 data without the data URL prefix
@@ -44,13 +47,21 @@ export async function processImageWithAnimalHeads(base64Image: string, mimeType:
         }
     }
 
-    throw new Error("No image was returned from the API.");
+    throw new Error("No image was returned from the API. The response may have been blocked.");
 
   } catch (error) {
     console.error("Gemini API call failed:", error);
-    if (error instanceof Error && error.message.includes('API key not valid')) {
-        throw new Error("The provided API Key is not valid. Please verify it in the settings.");
+    if (error instanceof Error) {
+        if (error.message.includes('API key not valid')) {
+            throw new Error("The provided API Key is not valid. Please verify it in the settings, ensure it has no restrictions, and that billing is enabled for your project.");
+        }
+        if (error.message.includes('400 Bad Request')) {
+             throw new Error("The request was malformed. This could be due to an invalid image format or a problem with the API request structure.");
+        }
+        if (error.message.includes('billing account')) {
+            throw new Error("Your Google Cloud project is missing a billing account. Please add one to use the Gemini API.");
+        }
     }
-    throw new Error("Failed to process the image with the AI model. Please try again later.");
+    throw new Error("Failed to process the image with the AI model. Please check the console for details.");
   }
 }
