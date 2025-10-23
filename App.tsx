@@ -4,7 +4,6 @@ import { TEXTS } from './constants';
 import { processImageWithAnimalHeads } from './services/geminiService';
 import Header from './components/Header';
 import Footer from './components/Footer';
-import ApiKeyModal from './components/ApiKeyModal';
 import { UploadIcon, DownloadIcon } from './components/icons';
 import ShineLoading from './components/ShineLoading';
 
@@ -35,8 +34,6 @@ export default function App() {
     const [error, setError] = useState<string | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [history, setHistory] = useState<HistoryItem[]>([]);
-    const [apiKey, setApiKey] = useState('');
-    const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -45,24 +42,6 @@ export default function App() {
     const [showRightFade, setShowRightFade] = useState(false);
 
     const text = TEXTS[language];
-    const isApiKeySet = !!apiKey;
-
-    useEffect(() => {
-        const storedKey = localStorage.getItem('gemini-api-key');
-        if (storedKey) {
-            setApiKey(storedKey);
-        }
-    }, []);
-
-    const handleSaveApiKey = (key: string) => {
-        setApiKey(key);
-        localStorage.setItem('gemini-api-key', key);
-    };
-
-    const handleClearApiKey = () => {
-        setApiKey('');
-        localStorage.removeItem('gemini-api-key');
-    };
 
     const updateScrollFades = useCallback(() => {
         const el = scrollContainerRef.current;
@@ -108,18 +87,12 @@ export default function App() {
     }, [originalImage, processedImages, originalMimeType]);
     
     const handleSubmit = useCallback(async (file: File) => {
-        if (!isApiKeySet) {
-            setError("Please set your API key in the settings.");
-            setIsApiKeyModalOpen(true);
-            return;
-        }
-
         if (!file.type.startsWith('image/')) {
             setError('Please upload a valid image file.');
             setAppState('error');
             return;
         }
-        
+
         handleReset();
         setAppState('loading');
         setError(null);
@@ -129,8 +102,8 @@ export default function App() {
             setOriginalImage(dataUrl);
             setOriginalMimeType(file.type);
 
-            const resultDataUrl = await processImageWithAnimalHeads(dataUrl, file.type, apiKey);
-            
+            const resultDataUrl = await processImageWithAnimalHeads(dataUrl, file.type);
+
             setProcessedImages([resultDataUrl]);
             setAppState('result');
         } catch (err) {
@@ -139,16 +112,16 @@ export default function App() {
             setError(errorMessage);
             setAppState('error');
         }
-    }, [handleReset, isApiKeySet, apiKey]);
+    }, [handleReset]);
 
     const handleRetry = useCallback(async () => {
-        if (!originalImage || !originalMimeType || isRetrying || !isApiKeySet) return;
+        if (!originalImage || !originalMimeType || isRetrying) return;
 
         setIsRetrying(true);
         setError(null);
-        
+
         try {
-            const resultDataUrl = await processImageWithAnimalHeads(originalImage, originalMimeType, apiKey);
+            const resultDataUrl = await processImageWithAnimalHeads(originalImage, originalMimeType);
             setProcessedImages(prev => [...prev, resultDataUrl]);
         } catch (err) {
             console.error(err);
@@ -160,7 +133,7 @@ export default function App() {
         } finally {
             setIsRetrying(false);
         }
-    }, [originalImage, originalMimeType, isRetrying, isApiKeySet, apiKey]);
+    }, [originalImage, originalMimeType, isRetrying]);
 
     const loadFromHistory = useCallback((item: HistoryItem, index: number) => {
         handleReset();
@@ -191,7 +164,7 @@ export default function App() {
 
     useEffect(() => {
         const handlePaste = (event: ClipboardEvent) => {
-            if (appState !== 'initial' || !isApiKeySet) return;
+            if (appState !== 'initial') return;
             const items = event.clipboardData?.items;
             if (!items) return;
             for (const item of items) {
@@ -207,7 +180,7 @@ export default function App() {
         };
         window.addEventListener('paste', handlePaste);
         return () => window.removeEventListener('paste', handlePaste);
-    }, [handleSubmit, appState, isApiKeySet]);
+    }, [handleSubmit, appState]);
 
     const toggleLanguage = () => {
         setLanguage(prev => (prev === 'zh' ? 'en' : 'zh'));
@@ -301,7 +274,7 @@ export default function App() {
                         </div>
 
                         <div className="mt-12 flex justify-center items-center flex-wrap gap-4">
-                            <button onClick={handleRetry} disabled={isRetrying || !isApiKeySet} className="px-6 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 font-semibold rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <button onClick={handleRetry} disabled={isRetrying} className="px-6 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 font-semibold rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
                                 {text.editor.result.retry}
                             </button>
                             <button onClick={handleReset} disabled={isRetrying} className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-semibold rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
@@ -322,35 +295,28 @@ export default function App() {
                 );
             case 'initial':
             default:
-                const noApiKeyMessage = language === 'zh' ? '请在设置中配置您的 API 密钥' : 'Please configure your API key in the settings';
                 return (
                     <div
-                        className={`relative w-full max-w-xl p-8 border-2 border-dashed rounded-2xl transition-colors ${isApiKeySet ? (isDragging ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500') : 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800/50'}`}
-                        onDragEnter={() => isApiKeySet && setIsDragging(true)}
+                        className={`relative w-full max-w-xl p-8 border-2 border-dashed rounded-2xl transition-colors ${isDragging ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'}`}
+                        onDragEnter={() => setIsDragging(true)}
                         onDragLeave={() => setIsDragging(false)}
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={handleDrop}
-                        onClick={() => isApiKeySet && fileInputRef.current?.click()}
+                        onClick={() => fileInputRef.current?.click()}
                     >
-                         <input
+                        <input
                             type="file"
                             ref={fileInputRef}
                             onChange={handleFileChange}
                             accept="image/*"
                             className="hidden"
-                            disabled={!isApiKeySet}
                         />
-                        <div className={`text-center ${isApiKeySet ? 'cursor-pointer' : 'cursor-not-allowed'}`}>
-                            <UploadIcon className={`mx-auto h-16 w-16 ${isApiKeySet ? 'text-gray-400 dark:text-gray-500' : 'text-gray-300 dark:text-gray-600'}`} />
-                            <h3 className={`mt-4 text-2xl font-medium ${isApiKeySet ? 'text-gray-800 dark:text-gray-200' : 'text-gray-500 dark:text-gray-400'}`}>{text.editor.initial.title}</h3>
-                            {isApiKeySet ? (
-                                <>
-                                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{text.editor.initial.prompt}</p>
-                                    <p className="text-xs text-gray-400 dark:text-gray-500">{text.editor.initial.paste}</p>
-                                </>
-                            ) : (
-                                 <p className="mt-2 text-sm text-red-500 dark:text-red-400 font-semibold">{noApiKeyMessage}</p>
-                            )}
+                        <div className="text-center cursor-pointer">
+                            <UploadIcon className="mx-auto h-16 w-16 text-gray-400 dark:text-gray-500" />
+                            <h3 className="mt-4 text-2xl font-medium text-gray-800 dark:text-gray-200">{text.editor.initial.title}</h3>
+                            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{text.editor.initial.prompt}</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500">{text.editor.initial.paste}</p>
+                            <p className="mt-4 text-xs text-emerald-600 dark:text-emerald-400">{text.editor.initial.hostedKey}</p>
                         </div>
                     </div>
                 );
@@ -379,10 +345,9 @@ export default function App() {
 
     return (
         <div className="bg-white dark:bg-[#1D1D1F] text-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
-            <Header 
-                language={language} 
-                toggleLanguage={toggleLanguage} 
-                onSettingsClick={() => setIsApiKeyModalOpen(true)}
+            <Header
+                language={language}
+                toggleLanguage={toggleLanguage}
                 text={text.header}
             />
             <main className="flex-grow flex flex-col items-center justify-center px-4 pt-20 pb-10">
@@ -393,14 +358,6 @@ export default function App() {
                 {appState !== 'loading' && renderHistory()}
             </main>
             <Footer text={text.footer}/>
-            <ApiKeyModal
-                isOpen={isApiKeyModalOpen}
-                onClose={() => setIsApiKeyModalOpen(false)}
-                onSave={handleSaveApiKey}
-                onClear={handleClearApiKey}
-                currentKey={apiKey}
-                text={text.apiKeyModal}
-            />
         </div>
     );
 }

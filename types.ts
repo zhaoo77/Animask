@@ -7,7 +7,7 @@ export interface LanguageContent {
       title: string;
       prompt: string;
       paste: string;
-      noApiKey: string;
+      hostedKey: string;
     };
     loading: string;
     result: {
@@ -26,15 +26,6 @@ export interface LanguageContent {
     history: {
       title: string;
     }
-  };
-  // FIX: Add apiKeyModal to LanguageContent interface
-  apiKeyModal: {
-    title: string;
-    label: string;
-    placeholder: string;
-    info: string;
-    save: string;
-    clear: string;
   };
   footer: {
     text: string;
