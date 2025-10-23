@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { LanguageIcon, SettingsIcon } from './icons';
+import { LanguageIcon } from './icons';
 import { Language, LanguageContent } from '../types';
 
 interface HeaderProps {
   language: Language;
   toggleLanguage: () => void;
-  onSettingsClick: () => void;
   text: LanguageContent['header'];
 }
 
-const Header: React.FC<HeaderProps> = ({ language, toggleLanguage, onSettingsClick, text }) => {
+const Header: React.FC<HeaderProps> = ({ language, toggleLanguage, text }) => {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -31,13 +30,6 @@ const Header: React.FC<HeaderProps> = ({ language, toggleLanguage, onSettingsCli
                 aria-label="Toggle language"
             >
                 <LanguageIcon />
-            </button>
-            <button
-                onClick={onSettingsClick}
-                className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
-                aria-label="API Settings"
-            >
-                <SettingsIcon />
             </button>
         </div>
       </nav>
